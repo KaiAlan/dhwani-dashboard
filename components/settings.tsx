@@ -76,11 +76,7 @@ const SettingsPageComponents = <TData extends Admin, TValue extends object>({
 
   return (
     <div className="w-full flex flex-col justify-center items-start gap-6 px-8 pt-10">
-      <Button variant="outline">
-        <ArrowLeft />
-        Back to Dashboard
-      </Button>
-      <div className="w-full flex justify-center items-start gap-10">
+      <div className="w-full flex flex-col lg:flex-row justify-center items-start gap-10">
         <Card className="w-80 flex flex-col justify-center items-center">
           <CardHeader className="w-full">
             <span className="w-40 h-40 rounded-full bg-blue-800" />

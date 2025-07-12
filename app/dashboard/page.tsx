@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import ExamAttemptsTable from "@/components/recent-exam";
+import { DashboardHeader } from "@/components/dashboard-header";
 
 export default function DashboardPage() {
   const { admin, isLoading } = useAuth();
@@ -20,7 +22,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (admin?.role === "user") {
+  if (!admin || admin?.role === "user") {
     return (
       <div>
         <h1>Contact admin to upgrade your role.</h1>
@@ -29,19 +31,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-gray-600">Manage your account and preferences</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="w-full space-y-6">
+      <DashboardHeader admin={admin} />
+      {/* <div className="w-full flex gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="flex flex-col gap-3">
               <Button className="w-full" variant="outline">
                 Edit Profile
               </Button>
@@ -53,7 +50,6 @@ export default function DashboardPage() {
                   Settings
                 </Button>
               </Link>
-            </div>
           </CardContent>
         </Card>
 
@@ -67,9 +63,9 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Welcome to Your Dashboard</CardTitle>
         </CardHeader>
@@ -80,7 +76,8 @@ export default function DashboardPage() {
             refresh and will redirect you to login if your session expires.
           </p>
         </CardContent>
-      </Card>
+      </Card> */}
+      <ExamAttemptsTable />
     </div>
   );
 }

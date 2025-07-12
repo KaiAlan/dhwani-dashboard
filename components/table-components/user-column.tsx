@@ -40,7 +40,7 @@ export const userColumns = [
       const user = row.original;
       if(user.role === 'user'){
         return(
-          <Button>Update role to admin</Button>
+          <Button>Update role</Button>
         )
       }
 
@@ -70,7 +70,7 @@ export const userColumns = [
         //   </DialogContent>
         // </Dialog>
 
-        <Button>Update role user</Button>
+        <Button>Update role</Button>
       );
     },
   }),
