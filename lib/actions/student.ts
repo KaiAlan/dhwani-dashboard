@@ -1,26 +1,9 @@
+// lib/actions/students.ts
 'use server';
 import { validateAuth } from '@/lib/auth';
-import { ExamAttempt, ExamAttemptsPagination } from '@/types/exam-attempts';
+import { FetchStudentsApiResponse, FetchStudentsResult } from '@/types/student';
 
-interface FetchExamAttemptsApiResponse {
-  success: boolean;
-  data: ExamAttempt[];
-  pagination: ExamAttemptsPagination;
-  message: string;
-}
-
-// Server action response type
-interface FetchExamAttemptsResult {
-  success: boolean;
-  data?: ExamAttempt[];
-  pagination?: ExamAttemptsPagination;
-  error?: string;
-}
-
-export async function fetchExamAttempts(
-  page: number = 1,
-  limit: number = 10
-): Promise<FetchExamAttemptsResult> {
+export async function fetchAllStudents(): Promise<FetchStudentsResult> {
   try {
     // Validate authentication
     const authResult = await validateAuth();
@@ -32,7 +15,7 @@ export async function fetchExamAttempts(
       };
     }
 
-    // Check if user has admin role to fetch exam attempts
+    // Check if user has admin role to fetch students
     if (authResult.admin.role !== 'admin') {
       return {
         success: false,
@@ -40,7 +23,7 @@ export async function fetchExamAttempts(
       };
     }
 
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/exam-attempts?page=${page}&limit=${limit}`;
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/students`;
 
     // Make API call to backend
     const response = await fetch(url, {
@@ -50,8 +33,6 @@ export async function fetchExamAttempts(
         'Content-Type': 'application/json',
       },
     });
-
-    // console.log(response.status)
 
     if (!response.ok) {
       // Handle different error status codes
@@ -69,7 +50,7 @@ export async function fetchExamAttempts(
         case 404:
           return {
             success: false,
-            error: 'Exam attempts endpoint not found.'
+            error: 'Students endpoint not found.'
           };
         case 500:
           return {
@@ -84,7 +65,7 @@ export async function fetchExamAttempts(
       }
     }
 
-    const apiResponse: FetchExamAttemptsApiResponse = await response.json();
+    const apiResponse: FetchStudentsApiResponse = await response.json();
 
     // Validate API response structure
     if (!apiResponse.success || !apiResponse.data) {
@@ -96,12 +77,11 @@ export async function fetchExamAttempts(
 
     return {
       success: true,
-      data: apiResponse.data,
-      pagination: apiResponse.pagination
+      data: apiResponse.data
     };
 
   } catch (error) {
-    console.error('Error fetching exam attempts:', error);
+    console.error('Error fetching students:', error);
    
     // Handle network errors
     if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -113,7 +93,7 @@ export async function fetchExamAttempts(
 
     return {
       success: false,
-      error: 'An unexpected error occurred while fetching exam attempts.'
+      error: 'An unexpected error occurred while fetching students.'
     };
   }
 }

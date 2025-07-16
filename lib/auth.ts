@@ -51,12 +51,12 @@ export async function setAuthCookies(tokens: AuthTokens) {
 
   cookieStore.set(ACCESS_TOKEN_COOKIE, tokens.adminAccessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 15 * 60, // 15 minutes
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   });
 
   cookieStore.set(REFRESH_TOKEN_COOKIE, tokens.adminRefreshToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 }
 

@@ -17,7 +17,7 @@ export interface FinalExamDetails {
   submissionType: 'text' | 'link';
   linkUrl: string | null;
   notes: string;
-  totalMarks: number | null;
+  totalMarks: number | string | null;
   isChecked: boolean;
   passed: boolean | null;
   feedback: string | null;
@@ -52,4 +52,34 @@ export interface ExamAttemptsPagination {
   limit: number;
   total: number;
   totalPages: number;
+}
+
+
+export interface UpdateExamAttemptRequest {
+  attemptId: number;
+  passed: boolean;
+  feedback?: string | null;
+  marks?: number | string;
+}
+
+export interface UpdateExamAttemptData {
+  attemptId: number;
+  passed: boolean;
+  feedback: string;
+  marks: number;
+  gradedAt: string;
+  gradedBy: number;
+}
+
+export interface UpdateExamAttemptApiResponse {
+  success: boolean;
+  message: string;
+  data: UpdateExamAttemptData;
+}
+
+// Server action response type
+export interface UpdateExamAttemptResult {
+  success: boolean;
+  data?: UpdateExamAttemptData;
+  error?: string;
 }

@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   ColumnDef,
@@ -11,29 +11,29 @@ import {
   SortingState,
   ColumnFiltersState,
   VisibilityState,
-} from '@tanstack/react-table';
-import { useExamAttempts } from '@/hooks/useExamAttempts';
-import { ExamAttempt } from '@/types/exam-attempts';
-import { 
-  Search, 
-  Eye, 
-  X, 
-  Calendar, 
-  User, 
-  BookOpen, 
-  FileText, 
-  Link, 
-  CheckCircle, 
+} from "@tanstack/react-table";
+import { useExamAttempts } from "@/hooks/useExamAttempts";
+import { ExamAttempt } from "@/types/exam-attempts";
+import {
+  Search,
+  Eye,
+  X,
+  Calendar,
+  User,
+  BookOpen,
+  FileText,
+  Link,
+  CheckCircle,
   XCircle,
   ArrowUpDown,
   ChevronDown,
-  MoreHorizontal
-} from 'lucide-react';
+  MoreHorizontal,
+} from "lucide-react";
 
 // Import shadcn/ui components
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -41,41 +41,70 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { useState } from 'react';
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
+import { useUpdateExamAttempt } from "@/hooks/use-update-exam-attempts";
+import { Textarea } from "./ui/textarea";
+import { toast } from "sonner";
 
 interface ExamAttemptDialogProps {
   attempt: ExamAttempt | null;
   isOpen: boolean;
   onClose: () => void;
-  onGrade: (attemptId: number, passed: boolean, marks?: number) => void;
+  onGrade: (
+    attemptId: number,
+    passed: boolean,
+    marks?: number | string,
+    feedback?: string | null
+  ) => void;
 }
 
-function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDialogProps) {
-  const [marks, setMarks] = useState<number>(attempt?.totalMarks || 0);
+function ExamAttemptDialog({
+  attempt,
+  isOpen,
+  onClose,
+  onGrade,
+}: ExamAttemptDialogProps) {
+  const [marks, setMarks] = useState<number | string>(
+    attempt?.finalExamDetails?.totalMarks || 0
+  );
+  const [feedback, setFeedback] = useState<string | null | undefined>(
+    attempt?.examType === "final"
+      ? attempt?.finalExamDetails?.feedback
+      : attempt?.examType === "assignment"
+      ? attempt?.assignmentDetails?.[0]?.feedback
+      : ""
+  );
   const [isGrading, setIsGrading] = useState(false);
+
+  // console.log(attempt?.finalExamDetails?.totalMarks, marks)
 
   const handleGrade = async (passed: boolean) => {
     setIsGrading(true);
     try {
-      await onGrade(attempt!.attemptId, passed, attempt?.examType === 'final' ? marks : undefined);
+      onGrade(
+        attempt!.attemptId,
+        passed,
+        attempt?.examType === "final" ? marks : undefined,
+        feedback
+      );
       onClose();
     } catch (error) {
-      console.error('Grading failed:', error);
+      console.error("Grading failed:", error);
     } finally {
       setIsGrading(false);
     }
@@ -87,9 +116,13 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'passed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Passed</Badge>;
-      case 'failed':
+      case "passed":
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            Passed
+          </Badge>
+        );
+      case "failed":
         return <Badge variant="destructive">Failed</Badge>;
       default:
         return <Badge variant="secondary">Pending</Badge>;
@@ -103,7 +136,9 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
       <DialogContent className="max-w-6xl w-full max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{attempt.examTitle}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{attempt.examDescription}</p>
+          <p className="text-sm text-muted-foreground">
+            {attempt.examDescription}
+          </p>
         </DialogHeader>
 
         <div className="w-full space-y-6">
@@ -129,7 +164,9 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Type:</span>
-                  <Badge variant="outline" className="capitalize">{attempt.examType}</Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {attempt.examType}
+                  </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
@@ -154,12 +191,16 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Submitted:</span>
-                  <span className="font-medium">{formatDate(attempt.dateTime)}</span>
+                  <span className="font-medium">
+                    {formatDate(attempt.dateTime)}
+                  </span>
                 </div>
                 {attempt.gradedAt && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Graded:</span>
-                    <span className="font-medium">{formatDate(attempt.gradedAt)}</span>
+                    <span className="font-medium">
+                      {formatDate(attempt.gradedAt)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -169,52 +210,67 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
           <Separator />
 
           {/* Assignment Details */}
-          {attempt.examType === 'assignment' && attempt.assignmentDetails && (
+          {attempt.examType === "assignment" && attempt.assignmentDetails && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                <h3 className="text-lg font-semibold">Assignment Submissions</h3>
+                <h3 className="text-lg font-semibold">
+                  Assignment Submissions
+                </h3>
               </div>
               <div className="space-y-4">
                 {attempt.assignmentDetails.map((submission) => (
-                  <div key={submission.submissionId} className="border rounded-lg p-4 space-y-3">
+                  <div
+                    key={submission.submissionId}
+                    className="border rounded-lg p-4 space-y-3"
+                  >
                     <div className="flex items-start justify-between">
                       <h4 className="font-medium">
-                        Question {submission.questionOrder}: {submission.question}
+                        Question {submission.questionOrder}:{" "}
+                        {submission.question}
                       </h4>
-                      {submission.passed !== null && getStatusBadge(submission.passed ? 'passed' : 'failed')}
+                      {submission.passed !== null &&
+                        getStatusBadge(submission.passed ? "passed" : "failed")}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span className="font-medium">Type:</span>
-                        <Badge variant="outline" className="capitalize">{submission.submissionType}</Badge>
+                        <Badge variant="outline" className="capitalize">
+                          {submission.submissionType}
+                        </Badge>
                       </div>
-                      
-                      {submission.submissionType === 'text' && submission.textAnswer && (
-                        <div>
-                          <Label className="text-sm font-medium">Answer:</Label>
-                          <div className="mt-1 p-3 bg-muted rounded border text-sm">
-                            {submission.textAnswer}
+
+                      {submission.submissionType === "text" &&
+                        submission.textAnswer && (
+                          <div>
+                            <Label className="text-sm font-medium">
+                              Answer:
+                            </Label>
+                            <div className="mt-1 p-3 bg-muted rounded border text-sm">
+                              {submission.textAnswer}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      {submission.submissionType === 'link' && submission.linkUrl && (
-                        <div>
-                          <Label className="text-sm font-medium">Submission Link:</Label>
-                          <a 
-                            href={submission.linkUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="mt-1 flex items-center gap-2 text-primary hover:underline text-sm"
-                          >
-                            <Link className="w-4 h-4" />
-                            View Submission
-                          </a>
-                        </div>
-                      )}
-                      
+                        )}
+
+                      {submission.submissionType === "link" &&
+                        submission.linkUrl && (
+                          <div>
+                            <Label className="text-sm font-medium">
+                              Submission Link:
+                            </Label>
+                            <a
+                              href={submission.linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 flex items-center gap-2 text-primary hover:underline text-sm"
+                            >
+                              <Link className="w-4 h-4" />
+                              View Submission
+                            </a>
+                          </div>
+                        )}
+
                       {submission.notes && (
                         <div>
                           <Label className="text-sm font-medium">Notes:</Label>
@@ -223,10 +279,12 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                           </div>
                         </div>
                       )}
-                      
+
                       {submission.feedback && (
                         <div>
-                          <Label className="text-sm font-medium">Feedback:</Label>
+                          <Label className="text-sm font-medium">
+                            Feedback:
+                          </Label>
                           <div className="mt-1 p-2 bg-yellow-50 rounded text-sm text-yellow-900">
                             {submission.feedback}
                           </div>
@@ -240,7 +298,7 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
           )}
 
           {/* Final Exam Details */}
-          {attempt.examType === 'final' && attempt.finalExamDetails && (
+          {attempt.examType === "final" && attempt.finalExamDetails && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -249,21 +307,27 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
               <div className="border rounded-lg p-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium">Submission Type:</Label>
-                    <Badge variant="outline" className="capitalize">{attempt.finalExamDetails.submissionType}</Badge>
+                    <Label className="text-sm font-medium">
+                      Submission Type:
+                    </Label>
+                    <Badge variant="outline" className="capitalize">
+                      {attempt.finalExamDetails.submissionType}
+                    </Badge>
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Total Marks:</Label>
-                    <p className="text-sm">{attempt.totalMarks || 'Not set'}</p>
+                    <p className="text-sm">{attempt.totalMarks || "Not set"}</p>
                   </div>
                 </div>
-                
+
                 {attempt.finalExamDetails.linkUrl && (
                   <div>
-                    <Label className="text-sm font-medium">Submission Link:</Label>
-                    <a 
-                      href={attempt.finalExamDetails.linkUrl} 
-                      target="_blank" 
+                    <Label className="text-sm font-medium">
+                      Submission Link:
+                    </Label>
+                    <a
+                      href={attempt.finalExamDetails.linkUrl}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="mt-1 flex items-center gap-2 text-primary hover:underline text-sm"
                     >
@@ -272,7 +336,7 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                     </a>
                   </div>
                 )}
-                
+
                 {attempt.finalExamDetails.notes && (
                   <div>
                     <Label className="text-sm font-medium">Notes:</Label>
@@ -281,7 +345,7 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                     </div>
                   </div>
                 )}
-                
+
                 {attempt.finalExamDetails.feedback && (
                   <div>
                     <Label className="text-sm font-medium">Feedback:</Label>
@@ -290,7 +354,7 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                     </div>
                   </div>
                 )}
-                
+
                 {attempt.finalExamDetails.requiresCertificate && (
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <CheckCircle className="w-4 h-4" />
@@ -306,8 +370,8 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
           {/* Grading Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Grading</h3>
-            <div className="space-y-4">
-              {attempt.examType === 'final' && (
+            <div className="space-y-4 flex flex-col gap-8">
+              {attempt.examType === "final" && (
                 <div className="space-y-2">
                   <Label htmlFor="marks">
                     Final Marks (out of {attempt.totalMarks})
@@ -323,7 +387,16 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                   />
                 </div>
               )}
-              
+              <div className="space-y-2">
+                <Label htmlFor="marks">Examiner Feedback</Label>
+                <Textarea
+                  id="feedback"
+                  value={feedback ?? ""}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  className="w-32"
+                />
+              </div>
+
               <div className="flex gap-3">
                 <Button
                   onClick={() => handleGrade(true)}
@@ -331,16 +404,16 @@ function ExamAttemptDialog({ attempt, isOpen, onClose, onGrade }: ExamAttemptDia
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  {isGrading ? 'Processing...' : 'Pass'}
+                  {isGrading ? "Processing..." : "Pass"}
                 </Button>
-                
+
                 <Button
                   onClick={() => handleGrade(false)}
                   disabled={isGrading}
                   variant="destructive"
                 >
                   <XCircle className="w-4 h-4 mr-2" />
-                  {isGrading ? 'Processing...' : 'Fail'}
+                  {isGrading ? "Processing..." : "Fail"}
                 </Button>
               </div>
             </div>
@@ -356,16 +429,33 @@ export default function ExamAttemptsTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [selectedAttempt, setSelectedAttempt] = useState<ExamAttempt | null>(null);
+  const [selectedAttempt, setSelectedAttempt] = useState<ExamAttempt | null>(
+    null
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: queryResult, isLoading, isError, error } = useExamAttempts();
+  const updateExamAttemptMutation = useUpdateExamAttempt({
+    onSuccess: (data) => {
+      console.log("Exam attempt graded successfully:", data);
+      // Additional success handling if needed
+    },
+    onError: (error) => {
+      console.error("Failed to grade exam attempt:", error);
+      // Additional error handling if needed
+    },
+    invalidateQueries: ["exam-attempts", "exam-attempt-details"], // Adjust based on your query keys
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'passed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Passed</Badge>;
-      case 'failed':
+      case "passed":
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            Passed
+          </Badge>
+        );
+      case "failed":
         return <Badge variant="destructive">Failed</Badge>;
       default:
         return <Badge variant="secondary">Pending</Badge>;
@@ -374,11 +464,11 @@ export default function ExamAttemptsTable() {
 
   const columns: ColumnDef<ExamAttempt>[] = [
     {
-      accessorKey: 'examTitle',
+      accessorKey: "examTitle",
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Exam Details
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -388,18 +478,20 @@ export default function ExamAttemptsTable() {
         <div className="space-y-1">
           <div className="font-medium">{row.original.examTitle}</div>
           <div className="text-sm text-muted-foreground">
-            <Badge variant="outline" className="capitalize mr-2">{row.original.examType}</Badge>
+            <Badge variant="outline" className="capitalize mr-2">
+              {row.original.examType}
+            </Badge>
             Week {row.original.week}
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'username',
+      accessorKey: "username",
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Student
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -408,16 +500,18 @@ export default function ExamAttemptsTable() {
       cell: ({ row }) => (
         <div className="space-y-1">
           <div className="font-medium">{row.original.username}</div>
-          <div className="text-sm text-muted-foreground">{row.original.email}</div>
+          <div className="text-sm text-muted-foreground">
+            {row.original.email}
+          </div>
         </div>
       ),
     },
     {
-      accessorKey: 'course',
+      accessorKey: "course",
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Course
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -426,21 +520,23 @@ export default function ExamAttemptsTable() {
       cell: ({ row }) => (
         <div className="space-y-1">
           <div className="font-medium">{row.original.course}</div>
-          <div className="text-sm text-muted-foreground">{row.original.year}</div>
+          <div className="text-sm text-muted-foreground">
+            {row.original.year}
+          </div>
         </div>
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => getStatusBadge(row.original.status),
     },
     {
-      accessorKey: 'dateTime',
+      accessorKey: "dateTime",
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Submitted
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -454,8 +550,8 @@ export default function ExamAttemptsTable() {
       ),
     },
     {
-      id: 'actions',
-      header: 'Actions',
+      id: "actions",
+      header: "Actions",
       cell: ({ row }) => (
         <Button
           variant="ghost"
@@ -491,10 +587,45 @@ export default function ExamAttemptsTable() {
     },
   });
 
-  const handleGrade = async (attemptId: number, passed: boolean, marks?: number) => {
+  const handleGrade = async (
+    attemptId: number,
+    passed: boolean,
+    marks?: number | string,
+    feedback?: string | null
+  ) => {
     // TODO: Implement API call for grading
-    console.log('Grading attempt:', { attemptId, passed, marks });
+    console.log("Grading attempt:", { attemptId, passed, marks, feedback });
+
+    if (!attemptId || typeof attemptId !== "number") {
+      toast.error("Invalid attempt ID");
+      console.error("Invalid attempt ID");
+      return;
+    }
+
+    if (typeof passed !== "boolean") {
+      toast.error("Passed status must be a boolean");
+      console.error("Passed status must be a boolean");
+      return;
+    }
+
+    // if (typeof marks !== 'number' || marks < 0) {
+    //   console.error('Marks must be a non-negative number');
+    //   toast.error('Marks must be a non-negative number');
+    //   return;
+    // }
+
+    // if (!feedback || typeof feedback !== 'string') {
+    //   console.error('Feedback is required and must be a string');
+    //   return;
+    // }
     // This will be replaced with actual API call
+
+    updateExamAttemptMutation.mutate({
+      attemptId,
+      passed,
+      marks,
+      feedback,
+    });
   };
 
   if (isLoading) {
@@ -521,7 +652,9 @@ export default function ExamAttemptsTable() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Exam Attempts</h1>
-          <p className="text-muted-foreground">Manage and grade student exam submissions</p>
+          <p className="text-muted-foreground">
+            Manage and grade student exam submissions
+          </p>
         </div>
       </div>
 
@@ -532,15 +665,17 @@ export default function ExamAttemptsTable() {
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search students, exams, or courses..."
-              value={(table.getColumn('examTitle')?.getFilterValue() as string) ?? ''}
+              value={
+                (table.getColumn("examTitle")?.getFilterValue() as string) ?? ""
+              }
               onChange={(event) =>
-                table.getColumn('examTitle')?.setFilterValue(event.target.value)
+                table.getColumn("examTitle")?.setFilterValue(event.target.value)
               }
               className="pl-8 max-w-sm"
             />
           </div>
         </div>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -593,7 +728,7 @@ export default function ExamAttemptsTable() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                   className="cursor-pointer hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -623,12 +758,12 @@ export default function ExamAttemptsTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </p>
           <div className="flex items-center space-x-2">

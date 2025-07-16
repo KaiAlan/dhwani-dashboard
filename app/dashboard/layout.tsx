@@ -83,7 +83,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 Navigation
               </h3>
               <SidebarLink href="/dashboard" icon={Home} label="Dashboard" />
-              <SidebarLink href="/dashboard/users" icon={Users} label="Users" />
+              <SidebarLink href="/dashboard/students" icon={Users} label="Students" />
               {/* <SidebarLink
                 href="/dashboard/reports"
                 icon={FileText}
